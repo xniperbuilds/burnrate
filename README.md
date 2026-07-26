@@ -1,3 +1,5 @@
+**English** | [简体中文](docs/zh-CN/README.md) | [繁體中文](docs/zh-TW/README.md) | [日本語](docs/ja/README.md) | [한국어](docs/ko/README.md) | [Español](docs/es/README.md) | [Português (BR)](docs/pt-BR/README.md) | [Deutsch](docs/de/README.md) | [Français](docs/fr/README.md) | [Русский](docs/ru/README.md) | [Türkçe](docs/tr/README.md) | [Tiếng Việt](docs/vi/README.md) | [हिन्दी](docs/hi/README.md)
+
 # burnrate
 
 **Find out what is actually burning your coding-agent tokens — measured from your own sessions, not a marketing percentage.**
