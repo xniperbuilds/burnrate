@@ -1,0 +1,35 @@
+{
+  "name": "xniperbuilds",
+  "owner": {
+    "name": "XniperBuilds",
+    "url": "https://github.com/xniperbuilds"
+  },
+  "metadata": {
+    "description": "Skills that measure instead of claiming.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "burnrate",
+      "source": "./plugins/burnrate",
+      "description": "Find out what is actually burning your coding-agent tokens — measured from your own sessions, not a marketing percentage.",
+      "version": "1.0.0",
+      "author": {
+        "name": "XniperBuilds",
+        "url": "https://github.com/xniperbuilds"
+      },
+      "homepage": "https://github.com/xniperbuilds/burnrate",
+      "license": "MIT",
+      "keywords": [
+        "tokens",
+        "token-usage",
+        "cost",
+        "context",
+        "usage-limits",
+        "efficiency",
+        "claude-code",
+        "optimization"
+      ]
+    }
+  ]
+}
