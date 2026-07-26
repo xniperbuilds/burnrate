@@ -63,6 +63,38 @@ It reads the transcripts already on your disk (`~/.claude/projects/**/*.jsonl`) 
       -> Read with offset/limit instead of whole files.
 ```
 
+## What loads before you type anything
+
+```bash
+python burnrate.py --startup
+```
+
+Startup context is paid on **every turn of every session**, so it is the highest-leverage thing to know. Real output:
+
+```
+-- MEASURED (first billed turn of each session) ----------------
+  median startup context      60,057 tokens   across 310 sessions
+  This is re-sent as cache_read on EVERY later turn of the session.
+
+-- ATTRIBUTED (scanned from your config, approx) ---------------
+  skill descriptions                    12,998  105 skill(s)
+  CLAUDE.md (user)                       3,674
+  memory index (MEMORY.md)               2,718  capped at 200 lines / 25KB
+  agent descriptions                     1,258  18 agent(s)
+  attributed total                      20,648
+
+  unattributed residual                 39,409  system prompt + tool schemas
+  your share                             34.4%  of startup is yours to cut
+```
+
+Three things make this different from a config-file estimator:
+
+- The **measured** number is exact — it comes from the `usage` field, not from counting words.
+- The **residual** is reported instead of hidden. Two thirds of that startup cost is the system prompt and tool schemas, which no amount of editing your files will change. Telling you that saves you from optimizing a number you cannot move.
+- **Only frontmatter is counted** for skills and agents. Their bodies load on demand, so counting whole skill files — as tools that scan config directories tend to do — overstates startup cost several times over.
+
+The usual surprise: **installed-but-unused skills outweigh `CLAUDE.md`.** Every skill's description loads every turn whether you invoke it or not, so `--startup` names the heaviest ones for you.
+
 ## Prove your own savings
 
 ```bash

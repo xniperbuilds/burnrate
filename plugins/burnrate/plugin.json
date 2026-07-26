@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "burnrate",
-  "version": "1.0.0",
-  "description": "Find out what is actually burning your coding-agent tokens — measured from your own sessions, not a marketing percentage.",
+  "version": "1.1.0",
+  "description": "Find out what is actually burning your coding-agent tokens - measured from your own sessions, not a marketing percentage.",
   "author": {
     "name": "XniperBuilds",
     "url": "https://github.com/xniperbuilds"

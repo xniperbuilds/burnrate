@@ -31,6 +31,20 @@ python scripts/burnrate.py --days 30
 
 Zero dependencies, stdlib Python 3.8+, no network, no keys. It reads `~/.claude/projects/**/*.jsonl` (override with `--root`). Useful flags: `--all`, `--days N`, `--project <name>`, `--json`.
 
+Then check what is loaded *before any work begins*:
+
+```bash
+python scripts/burnrate.py --startup
+```
+
+This is the highest-leverage view, because startup context is re-sent on every turn of every session. It reports three things:
+
+- **Measured** — the median first-billed-turn context across the user's sessions. Exact, from the `usage` field.
+- **Attributed** — which of their files cause it: `CLAUDE.md`, always-loaded rules, the memory index, skill and agent descriptions.
+- **Residual** — measured minus attributed. That is the system prompt, tool schemas, and MCP servers: real, but not cuttable by editing files. Reporting it separately stops the user from chasing a number they cannot move.
+
+**Only frontmatter is counted for skills and agents.** Their bodies load on demand. Counting whole skill files is the mistake that makes other context-budget tools overstate startup cost several times over — do not repeat it.
+
 It reports four things:
 
 1. **Raw token split** across cache-read / cache-write / output / input.

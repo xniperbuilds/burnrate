@@ -8,6 +8,20 @@ The ordering follows from one mechanic: **context is re-sent on every turn, outp
 
 ## Tier 1 — Big, permanent, no downside
 
+Run `burnrate.py --startup` first — it tells you which of these three actually applies, with numbers.
+
+### 0. Uninstall skills you do not use
+
+Every installed skill's **description frontmatter** loads on every turn, whether or not the skill is ever invoked. The body does not — only the description. So the cost scales with how many skills are *installed*, not how many are *used*.
+
+A machine with ~100 skills installed carries roughly 10–15K tokens of descriptions on every single turn. That is usually the largest attributable slice of startup context — bigger than `CLAUDE.md`.
+
+- `--startup` lists the heaviest descriptions by name. Remove what you do not reach for.
+- Long, keyword-stuffed `description:` fields cost the most. When writing your own skills, keep the description tight enough to trigger correctly and no longer.
+- This cut costs nothing and breaks nothing.
+
+**Cost:** none. **Payback:** every turn of every session, forever.
+
 ### 1. Shrink the always-loaded files
 
 `CLAUDE.md`, `.claude/rules/*`, and the memory index load on **every turn of every session**. This is the only line item you pay for even when you do nothing.

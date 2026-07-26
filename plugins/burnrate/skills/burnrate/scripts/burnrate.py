@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """burnrate - find out what is actually burning your coding-agent tokens.
 
 Reads your own local session transcripts and reports measured numbers.
@@ -10,6 +10,7 @@ Usage:
     python burnrate.py --all
     python burnrate.py --project myrepo   # filter by project dir name
     python burnrate.py --json             # machine-readable
+    python burnrate.py --startup          # what loads before you type anything
     python burnrate.py --snapshot before  # save a baseline
     python burnrate.py --compare before   # measure what your changes did
 
@@ -23,10 +24,11 @@ import collections
 import glob
 import json
 import os
+import re
 import sys
 import time
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 # Relative billing weights vs base input tokens. Published Anthropic ratios:
 # cache write = 1.25x input, cache read = 0.10x input, output = 5x input.
@@ -113,6 +115,7 @@ class Report(object):
         self.image_reads = 0
         self.image_bytes = 0
         self.models = collections.Counter()
+        self.first_turns = []       # startup context per session
         self.first_ts = None
         self.last_ts = None
 
@@ -132,6 +135,7 @@ def scan(files):
         s = collections.Counter()
         id_to_tool = {}
         id_to_path = {}
+        got_first = False
         try:
             fh = open(path, "r", encoding="utf-8", errors="replace")
         except (IOError, OSError):
@@ -156,6 +160,15 @@ def scan(files):
                         r.turns += 1
                         for k in TOKEN_KEYS:
                             s[k] += usage.get(k) or 0
+                        if not got_first:
+                            # First billed turn ~= the startup context: system prompt,
+                            # tool schemas, CLAUDE.md, rules, memory index. Everything
+                            # here is re-sent as cache_read on every later turn.
+                            got_first = True
+                            r.first_turns.append(
+                                (usage.get("cache_creation_input_tokens") or 0)
+                                + (usage.get("cache_read_input_tokens") or 0)
+                                + (usage.get("input_tokens") or 0))
                     model = msg.get("model")
                     if model:
                         r.models[model] += 1
@@ -208,6 +221,234 @@ def scan(files):
         if s["output_tokens"] > 0:
             r.ratios.append(s["cache_read_input_tokens"] / float(s["output_tokens"]))
     return r
+
+
+# ---------------------------------------------------------------- startup scan
+
+def _tok(path, cap_bytes=None):
+    """Approximate tokens for a file. chars/4, same convention as everywhere else."""
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except (IOError, OSError):
+        return 0, ""
+    if cap_bytes and len(text.encode("utf-8", "replace")) > cap_bytes:
+        text = text[: cap_bytes // 2]
+    return len(text) // CHARS_PER_TOKEN, text
+
+
+def _frontmatter(text):
+    """Return (frontmatter_text, rest). Only the frontmatter of a skill/agent
+    is loaded at startup - the body loads on demand. Counting whole files here
+    is the mistake that makes other 'context budget' tools overstate."""
+    if not text.startswith("---"):
+        return "", text
+    end = text.find("\n---", 3)
+    if end == -1:
+        return "", text
+    return text[3:end], text[end + 4:]
+
+
+def _claude_dir():
+    env = os.environ.get("CLAUDE_CONFIG_DIR")
+    return os.path.expanduser(env) if env else os.path.join(os.path.expanduser("~"), ".claude")
+
+
+def scan_startup(cwd=None):
+    """Attribute the always-loaded context to the files that cause it."""
+    cwd = cwd or os.getcwd()
+    home = _claude_dir()
+    comps = []          # (category, label, tokens, note)
+
+    def add(cat, label, n, note=""):
+        if n > 0:
+            comps.append((cat, label, n, note))
+
+    # --- instruction files ------------------------------------------------
+    for label, path in (
+        ("CLAUDE.md (user)", os.path.join(home, "CLAUDE.md")),
+        ("CLAUDE.md (project)", os.path.join(cwd, "CLAUDE.md")),
+        ("CLAUDE.md (.claude/)", os.path.join(cwd, ".claude", "CLAUDE.md")),
+        ("CLAUDE.local.md", os.path.join(cwd, "CLAUDE.local.md")),
+    ):
+        if os.path.isfile(path):
+            n, text = _tok(path)
+            imports = re.findall(r"(?m)(?<![`\w])@([~./\w\\-]+\.\w+)", text)
+            add("instructions", label, n,
+                "%d @import(s)" % len(imports) if imports else "")
+            for imp in imports[:20]:
+                ip = os.path.expanduser(imp) if imp.startswith("~") else \
+                    os.path.normpath(os.path.join(os.path.dirname(path), imp))
+                if os.path.isfile(ip):
+                    add("instructions", "  @%s" % os.path.basename(ip), _tok(ip)[0])
+
+    # --- rules (always-loaded vs path-scoped) ----------------------------
+    for base, scope in ((os.path.join(home, "rules"), "user"),
+                        (os.path.join(cwd, ".claude", "rules"), "project")):
+        if not os.path.isdir(base):
+            continue
+        always = scoped = 0
+        n_always = n_scoped = 0
+        for root_dir, _dirs, names in os.walk(base):
+            for nm in names:
+                if not nm.endswith(".md"):
+                    continue
+                n, text = _tok(os.path.join(root_dir, nm))
+                fm, _ = _frontmatter(text)
+                if "paths:" in fm:
+                    scoped += n; n_scoped += 1
+                else:
+                    always += n; n_always += 1
+        add("instructions", "rules/ %s (always)" % scope, always, "%d file(s)" % n_always)
+        if scoped:
+            comps.append(("deferred", "rules/ %s (path-scoped)" % scope, scoped,
+                          "%d file(s), only when matched" % n_scoped))
+
+    # --- memory index (capped by Claude Code at 200 lines / 25KB) --------
+    mem_root = os.path.join(home, "projects")
+    if os.path.isdir(mem_root):
+        best = None
+        for d in glob.glob(os.path.join(mem_root, "*", "memory", "MEMORY.md")):
+            m = os.path.getmtime(d)
+            if best is None or m > best[0]:
+                best = (m, d)
+        if best:
+            add("instructions", "memory index (MEMORY.md)", _tok(best[1], 25600)[0],
+                "capped at 200 lines / 25KB")
+
+    # --- skills: ONLY the frontmatter loads at startup -------------------
+    skill_dirs = [os.path.join(home, "skills")]
+    plug = os.path.join(home, "plugins")
+    if os.path.isdir(plug):
+        skill_dirs.extend(glob.glob(os.path.join(plug, "**", "skills"), recursive=True))
+    fm_tokens = body_tokens = count = 0
+    heaviest = []
+    seen = set()
+    for sd in skill_dirs:
+        for sk in glob.glob(os.path.join(sd, "*", "SKILL.md")):
+            name = os.path.basename(os.path.dirname(sk))
+            if name in seen:
+                continue          # same skill via plugin + direct install
+            seen.add(name)
+            n, text = _tok(sk)
+            fm, body = _frontmatter(text)
+            count += 1
+            t = len(fm) // CHARS_PER_TOKEN
+            fm_tokens += t
+            body_tokens += len(body) // CHARS_PER_TOKEN
+            heaviest.append((t, name))
+    heaviest.sort(reverse=True)
+    add("descriptions", "skill descriptions", fm_tokens, "%d skill(s)" % count)
+    scan_startup.heaviest_skills = heaviest[:6]
+    scan_startup.skill_count = count
+    if body_tokens:
+        comps.append(("deferred", "skill bodies", body_tokens,
+                      "%d skill(s), load only when invoked" % count))
+
+    # --- agents: frontmatter only ----------------------------------------
+    ag_dir = os.path.join(home, "agents")
+    if os.path.isdir(ag_dir):
+        n_ag = t_ag = 0
+        for ag in glob.glob(os.path.join(ag_dir, "*.md")):
+            _, text = _tok(ag)
+            fm, _ = _frontmatter(text)
+            t_ag += len(fm) // CHARS_PER_TOKEN
+            n_ag += 1
+        add("descriptions", "agent descriptions", t_ag, "%d agent(s)" % n_ag)
+
+    # --- MCP servers: schemas are real but not readable from disk --------
+    servers = set()
+    for cfg in (os.path.join(home, "settings.json"), os.path.join(cwd, ".mcp.json"),
+                os.path.join(cwd, ".claude", "settings.json")):
+        if not os.path.isfile(cfg):
+            continue
+        try:
+            with open(cfg, "r", encoding="utf-8-sig", errors="replace") as fh:
+                servers.update((json.load(fh).get("mcpServers") or {}).keys())
+        except (ValueError, IOError, OSError, AttributeError):
+            pass
+    return comps, sorted(servers)
+
+
+def print_startup(r, args):
+    comps, servers = scan_startup(args.cwd)
+    line = "=" * 66
+    print(line)
+    print(" burnrate %s  -  what loads before you type anything" % __version__)
+    print(line)
+
+    measured = None
+    if r.first_turns:
+        v = sorted(r.first_turns)
+        measured = v[len(v) // 2]
+        print("\n-- MEASURED (first billed turn of each session) ----------------")
+        print("  median startup context   %9s tokens   across %d sessions"
+              % ("{:,}".format(measured), len(v)))
+        print("  p25 %s   p75 %s   max %s"
+              % ("{:,}".format(v[len(v) // 4]), "{:,}".format(v[3 * len(v) // 4]),
+                 "{:,}".format(v[-1])))
+        print("  This is re-sent as cache_read on EVERY later turn of the session.")
+
+    always = [c for c in comps if c[0] != "deferred"]
+    deferred = [c for c in comps if c[0] == "deferred"]
+    attributed = sum(c[2] for c in always)
+
+    print("\n-- ATTRIBUTED (scanned from your config, approx) ---------------")
+    for _cat, label, n, note in sorted(always, key=lambda x: -x[2]):
+        print("  %-34s %9s  %s" % (label[:34], "{:,}".format(n), note))
+    print("  %-34s %9s" % ("attributed total", "{:,}".format(attributed)))
+
+    if measured:
+        residual = measured - attributed
+        print("\n  %-34s %9s  %s" % ("unattributed residual", "{:,}".format(residual),
+                                     "system prompt + tool schemas" +
+                                     (" + %d MCP server(s)" % len(servers) if servers else "")))
+        if attributed:
+            print("  %-34s %8.1f%%  of startup is yours to cut"
+                  % ("your share", 100.0 * attributed / measured))
+
+    if deferred:
+        print("\n-- NOT loaded at startup (on demand only) ----------------------")
+        for _cat, label, n, note in sorted(deferred, key=lambda x: -x[2]):
+            print("  %-34s %9s  %s" % (label[:34], "{:,}".format(n), note))
+
+    if servers:
+        print("\n  MCP servers configured: %s" % ", ".join(servers))
+        print("  Their tool schemas load every turn but are not readable from disk,")
+        print("  so they sit inside the residual above rather than being guessed at.")
+
+    print("\n-- FINDINGS ---------------------------------------------------")
+    hits = 0
+    for _cat, label, n, _note in sorted(always, key=lambda x: -x[2])[:3]:
+        if n >= 1500:
+            hits += 1
+            print("\n  [%s] %s costs ~%s tokens on every turn"
+                  % ("HIGH" if n >= 4000 else "MEDIUM", label, "{:,}".format(n)))
+            print("      Over a 100-turn session that is ~%s tokens." % human(n * 100))
+            if label == "skill descriptions":
+                top = getattr(scan_startup, "heaviest_skills", [])
+                cnt = getattr(scan_startup, "skill_count", 0)
+                print("      %d skill(s) installed. Every description loads every turn," % cnt)
+                print("      whether or not you use the skill. Heaviest:")
+                for t, nm in top:
+                    print("        %5s tok  %s" % ("{:,}".format(t), nm))
+                print("      -> Uninstall what you do not use. This is the one cut that")
+                print("         costs nothing and pays on every turn of every session.")
+    if measured and measured > 40000:
+        hits += 1
+        print("\n  [HIGH] Startup context is %s tokens before any work begins"
+              % "{:,}".format(measured))
+        print("      Every turn re-sends it. Shortening the files above is the only")
+        print("      lever that pays on every turn of every future session.")
+    if not hits:
+        print("\n  Nothing oversized. Startup overhead is not your problem -")
+        print("  run the main report to see where the tokens actually went.")
+
+    print("\n" + line)
+    print(" Attributed figures are approximate (chars/%d). The measured number" % CHARS_PER_TOKEN)
+    print(" is exact. Only skill/agent FRONTMATTER is counted - bodies load on")
+    print(" demand, so counting whole skill files would overstate this badly.")
+    print(line)
 
 
 def weighted(tokens):
@@ -454,6 +695,9 @@ def main(argv=None):
     p.add_argument("--json", action="store_true", help="machine-readable output")
     p.add_argument("--snapshot", metavar="NAME", help="save current numbers as a baseline")
     p.add_argument("--compare", metavar="NAME", help="compare current numbers against a baseline")
+    p.add_argument("--startup", action="store_true",
+                   help="what loads before you type anything, and which files cause it")
+    p.add_argument("--cwd", help="project directory to scan for --startup (default: current)")
     p.add_argument("--root", help="override transcript directory")
     p.add_argument("--version", action="version", version="burnrate " + __version__)
     args = p.parse_args(argv)
@@ -468,6 +712,10 @@ def main(argv=None):
         return 1
 
     r = scan(files)
+
+    if args.startup:
+        print_startup(r, args)
+        return 0
 
     if args.compare:
         return do_compare(r, args.compare)
