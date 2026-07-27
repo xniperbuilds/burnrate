@@ -96,7 +96,17 @@ Ba điều khiến nó khác với một công cụ ước lượng tệp cấu 
 - **Phần dư** được báo cáo thay vì giấu đi. Hai phần ba chi phí khởi động đó là system prompt và schema công cụ, thứ sẽ không đổi dù bạn sửa tệp của mình bao nhiêu đi nữa. Nói cho bạn biết điều này giúp bạn khỏi tối ưu một con số bạn không thể lay chuyển.
 - Với skill và tác nhân, **chỉ frontmatter được tính**. Phần thân nạp theo yêu cầu, nên việc đếm cả tệp skill — như các công cụ quét thư mục cấu hình thường làm — sẽ thổi phồng chi phí khởi động lên nhiều lần.
 
-Bất ngờ thường gặp: **những skill đã cài nhưng không dùng còn nặng hơn `CLAUDE.md`.** Mô tả của mỗi skill được nạp mỗi lượt dù bạn có gọi nó hay không, nên `--startup` sẽ chỉ đích danh những cái nặng nhất.
+Bất ngờ thường gặp: **những skill đã cài nhưng không dùng còn nặng hơn `CLAUDE.md`.** Mô tả của mỗi skill được nạp mỗi lượt dù bạn có gọi nó hay không — vì vậy `--startup` còn đếm các lệnh gọi công cụ `Skill` thật trong toàn bộ lịch sử của bạn và tách *đã cài* khỏi *đã dùng*:
+
+```
+  Trên TOÀN BỘ lịch sử của bạn (416 bản ghi, không phải cửa sổ --days):
+    đã cài 105  |  có ghi nhận lệnh gọi 12  |  không có 93
+
+  Khoảng 10.956 token mỗi lượt đổ vào những skill không có lệnh gọi nào.
+  Một phiên 100 lượt là khoảng 1,1 triệu.
+```
+
+Đây không phải ước tính lãng phí — đây là lãng phí có tên, xếp từ nặng nhất. Một công cụ chỉ quét thư mục cấu hình thì không thể biết điều này.
 
 ## Chứng minh phần tiết kiệm của chính bạn
 

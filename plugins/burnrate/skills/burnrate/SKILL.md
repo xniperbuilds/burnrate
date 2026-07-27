@@ -45,6 +45,13 @@ This is the highest-leverage view, because startup context is re-sent on every t
 
 **Only frontmatter is counted for skills and agents.** Their bodies load on demand. Counting whole skill files is the mistake that makes other context-budget tools overstate startup cost several times over — do not repeat it.
 
+It also separates **installed** skills from **used** ones by counting real `Skill` tool calls in the transcripts. A skill nobody has ever invoked still charges its description on every turn, so this converts "here are your heaviest skills" into "here are the ones you have never once used, and what they cost you". Tools that only scan a config directory cannot know this.
+
+Two rules when reporting it:
+
+- Usage is counted across the **entire** transcript history, never the `--days` window. Telling someone to delete a skill they used two months ago is a worse error than staying quiet.
+- Only explicit `Skill` tool calls are visible, so a skill reached another way looks unused. Report it as *no recorded invocation*, not *never used*, and tell the user to check the list before deleting.
+
 It reports four things:
 
 1. **Raw token split** across cache-read / cache-write / output / input.

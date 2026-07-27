@@ -96,7 +96,17 @@ Drei Dinge unterscheiden das von einem Konfigurationsdatei-Schätzer:
 - Der **Rest** wird ausgewiesen statt versteckt. Zwei Drittel dieser Startkosten sind System-Prompt und Tool-Schemas, die sich durch Bearbeiten deiner Dateien nicht ändern. Das zu sagen bewahrt dich davor, eine Zahl zu optimieren, die du nicht bewegen kannst.
 - Bei Skills und Agents wird **nur das Frontmatter** gezählt. Ihre Rümpfe laden bei Bedarf; ganze Skill-Dateien zu zählen — wie es Tools tun, die Konfigurationsverzeichnisse scannen — überschätzt die Startkosten um ein Vielfaches.
 
-Die übliche Überraschung: **installierte, aber ungenutzte Skills wiegen mehr als `CLAUDE.md`.** Die Beschreibung jeder Skill lädt in jedem Turn, ob du sie aufrufst oder nicht — `--startup` nennt dir die schwersten beim Namen.
+Die übliche Überraschung: **installierte, aber ungenutzte Skills wiegen mehr als `CLAUDE.md`.** Die Beschreibung jeder Skill lädt in jedem Turn, ob du sie aufrufst oder nicht — deshalb zählt `--startup` auch die echten `Skill`-Tool-Aufrufe in deiner gesamten Historie und trennt *installiert* von *genutzt*:
+
+```
+  Über deine GESAMTE Historie (416 Transkripte, nicht das --days-Fenster):
+    105 installiert  |  12 mit erfasstem Aufruf  |  93 ohne
+
+  ~10.956 Tokens pro Turn gehen an Skills ohne erfassten Aufruf.
+  In einer Session mit 100 Turns sind das ~1,1 Mio.
+```
+
+Das ist keine Schätzung von Verschwendung — es ist Verschwendung mit Namen, nach Gewicht sortiert. Ein Werkzeug, das nur dein Konfigurationsverzeichnis scannt, kann das nicht wissen.
 
 ## Weise deine eigene Ersparnis nach
 

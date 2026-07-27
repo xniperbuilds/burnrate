@@ -96,7 +96,17 @@ Bunu bir yapılandırma dosyası tahmincisinden ayıran üç şey var:
 - **Kalan** gizlenmek yerine raporlanır. Bu başlangıç maliyetinin üçte ikisi sistem istemi ve araç şemalarıdır; kendi dosyalarınızı ne kadar düzenlerseniz düzenleyin değişmez. Bunu söylemek, kımıldatamayacağınız bir sayıyı optimize etmenizi önler.
 - Skill'ler ve ajanlar için **yalnızca frontmatter sayılır**. Gövdeleri talep üzerine yüklenir; skill dosyalarının tamamını saymak — yapılandırma dizinlerini tarayan araçların sıkça yaptığı gibi — başlangıç maliyetini kat kat abartır.
 
-Alışıldık sürpriz: **kurulu ama kullanılmayan skill'ler `CLAUDE.md`'den ağır basar.** Her skill'in açıklaması, siz çağırsanız da çağırmasanız da her turda yüklenir; `--startup` en ağırlarını adıyla söyler.
+Alışıldık sürpriz: **kurulu ama kullanılmayan skill'ler `CLAUDE.md`'den ağır basar.** Her skill'in açıklaması, siz çağırsanız da çağırmasanız da her turda yüklenir — bu yüzden `--startup` ayrıca tüm geçmişinizdeki gerçek `Skill` aracı çağrılarını sayar ve *kurulu* olanı *kullanılan*dan ayırır:
+
+```
+  TÜM geçmişinizde (416 kayıt, --days penceresi değil):
+    kurulu 105  |  çağrı kaydı olan 12  |  olmayan 93
+
+  Tur başına ~10.956 token, çağrı kaydı olmayan skill'lere gidiyor.
+  100 turluk bir oturumda bu ~1,1 milyon eder.
+```
+
+Bu bir israf tahmini değil — adı sanı belli bir israf, en ağırdan başlayarak sıralanmış. Yalnızca yapılandırma dizininizi tarayan bir araç bunu bilemez.
 
 ## Kendi tasarrufunuzu kanıtlayın
 

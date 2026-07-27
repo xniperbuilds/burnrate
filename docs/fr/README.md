@@ -96,7 +96,17 @@ Trois choses le distinguent d'un estimateur de fichiers de configuration :
 - Le **résidu** est indiqué plutôt que caché. Deux tiers de ce coût de démarrage sont le prompt système et les schémas d'outils, que vos modifications de fichiers ne changeront jamais. Vous le dire vous évite d'optimiser un nombre que vous ne pouvez pas bouger.
 - Pour les skills et les agents, **seul le frontmatter est compté**. Leurs corps se chargent à la demande ; compter des fichiers de skill entiers — ce que font souvent les outils qui scannent les répertoires de configuration — surestime le coût de démarrage de plusieurs fois.
 
-La surprise habituelle : **les skills installées mais inutilisées pèsent plus que `CLAUDE.md`.** La description de chaque skill se charge à chaque tour, que vous l'invoquiez ou non ; `--startup` vous nomme les plus lourdes.
+La surprise habituelle : **les skills installées mais inutilisées pèsent plus que `CLAUDE.md`.** La description de chaque skill se charge à chaque tour, que vous l'invoquiez ou non — c'est pourquoi `--startup` compte aussi les véritables appels à l'outil `Skill` sur tout votre historique et sépare *installées* et *utilisées* :
+
+```
+  Sur TOUT votre historique (416 transcriptions, pas la fenêtre --days) :
+    105 installées  |  12 avec une invocation enregistrée  |  93 sans
+
+  ~10 956 tokens par tour partent dans des skills sans invocation enregistrée.
+  Sur une session de 100 tours, cela fait ~1,1 M.
+```
+
+Ce n'est pas une estimation du gaspillage : c'est du gaspillage nommé, classé du plus lourd au plus léger. Un outil qui se contente de scanner votre répertoire de configuration ne peut pas le savoir.
 
 ## Prouvez vos propres économies
 

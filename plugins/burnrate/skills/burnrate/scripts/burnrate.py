@@ -28,7 +28,7 @@ import re
 import sys
 import time
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 # Relative billing weights vs base input tokens. Published Anthropic ratios:
 # cache write = 1.25x input, cache read = 0.10x input, output = 5x input.
@@ -254,6 +254,49 @@ def _claude_dir():
     return os.path.expanduser(env) if env else os.path.join(os.path.expanduser("~"), ".claude")
 
 
+def skill_usage(root):
+    """Count how often each skill was actually invoked.
+
+    Deliberately scans the FULL transcript history, never the --days window:
+    telling someone to delete a skill they used two months ago would be a
+    worse error than saying nothing. Only explicit Skill tool calls are
+    counted, so a skill reached another way will look unused - which is why
+    this is reported as 'no invocation found', not 'never used'.
+    """
+    calls = collections.Counter()
+    sessions = collections.Counter()
+    scanned = 0
+    for path in glob.glob(os.path.join(root, "**", "*.jsonl"), recursive=True):
+        scanned += 1
+        seen = set()
+        try:
+            fh = open(path, "r", encoding="utf-8", errors="replace")
+        except (IOError, OSError):
+            continue
+        with fh:
+            for line in fh:
+                if '"Skill"' not in line:
+                    continue                      # cheap prefilter
+                try:
+                    o = json.loads(line)
+                except ValueError:
+                    continue
+                if o.get("type") != "assistant":
+                    continue
+                for b in (o.get("message") or {}).get("content") or []:
+                    if not isinstance(b, dict) or b.get("type") != "tool_use":
+                        continue
+                    if b.get("name") != "Skill":
+                        continue
+                    nm = (b.get("input") or {}).get("skill")
+                    if nm:
+                        calls[nm] += 1
+                        seen.add(nm)
+        for nm in seen:
+            sessions[nm] += 1
+    return calls, sessions, scanned
+
+
 def scan_startup(cwd=None):
     """Attribute the always-loaded context to the files that cause it."""
     cwd = cwd or os.getcwd()
@@ -341,6 +384,7 @@ def scan_startup(cwd=None):
     add("descriptions", "skill descriptions", fm_tokens, "%d skill(s)" % count)
     scan_startup.heaviest_skills = heaviest[:6]
     scan_startup.skill_count = count
+    scan_startup.all_skills = heaviest
     if body_tokens:
         comps.append(("deferred", "skill bodies", body_tokens,
                       "%d skill(s), load only when invoked" % count))
@@ -426,14 +470,38 @@ def print_startup(r, args):
                   % ("HIGH" if n >= 4000 else "MEDIUM", label, "{:,}".format(n)))
             print("      Over a 100-turn session that is ~%s tokens." % human(n * 100))
             if label == "skill descriptions":
-                top = getattr(scan_startup, "heaviest_skills", [])
                 cnt = getattr(scan_startup, "skill_count", 0)
+                allsk = getattr(scan_startup, "all_skills", [])
                 print("      %d skill(s) installed. Every description loads every turn," % cnt)
-                print("      whether or not you use the skill. Heaviest:")
-                for t, nm in top:
-                    print("        %5s tok  %s" % ("{:,}".format(t), nm))
-                print("      -> Uninstall what you do not use. This is the one cut that")
-                print("         costs nothing and pays on every turn of every session.")
+                print("      whether or not you use the skill.")
+
+                calls, sess, scanned = skill_usage(args.root or transcript_root())
+                unused = [(t, nm) for t, nm in allsk if nm not in calls]
+                wasted = sum(t for t, _ in unused)
+                if calls:
+                    print("\n      Across your ENTIRE history (%d transcripts, not the"
+                          " --days window):" % scanned)
+                    print("        %d installed  |  %d with a recorded invocation  |  %d without"
+                          % (cnt, cnt - len(unused), len(unused)))
+                    if unused:
+                        print("\n      ~%s tokens per turn goes to skills with no recorded"
+                              % "{:,}".format(wasted))
+                        print("      invocation. Over a 100-turn session that is ~%s."
+                              % human(wasted * 100))
+                        print("      Heaviest of those:")
+                        for t, nm in unused[:8]:
+                            print("        %5s tok  %s" % ("{:,}".format(t), nm))
+                        print("\n      -> Uninstalling these costs nothing and pays on every")
+                        print("         turn of every future session.")
+                        print("      -> Caveat: only explicit Skill tool calls are counted, so a")
+                        print("         skill reached another way shows here too. Check the list")
+                        print("         before deleting.")
+                else:
+                    print("      Heaviest:")
+                    for t, nm in allsk[:6]:
+                        print("        %5s tok  %s" % ("{:,}".format(t), nm))
+                    print("      -> No Skill invocations found in your history, so usage could")
+                    print("         not be measured. Uninstall what you know you do not use.")
     if measured and measured > 40000:
         hits += 1
         print("\n  [HIGH] Startup context is %s tokens before any work begins"

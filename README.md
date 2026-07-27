@@ -95,7 +95,17 @@ Three things make this different from a config-file estimator:
 - The **residual** is reported instead of hidden. Two thirds of that startup cost is the system prompt and tool schemas, which no amount of editing your files will change. Telling you that saves you from optimizing a number you cannot move.
 - **Only frontmatter is counted** for skills and agents. Their bodies load on demand, so counting whole skill files — as tools that scan config directories tend to do — overstates startup cost several times over.
 
-The usual surprise: **installed-but-unused skills outweigh `CLAUDE.md`.** Every skill's description loads every turn whether you invoke it or not, so `--startup` names the heaviest ones for you.
+The usual surprise: **installed-but-unused skills outweigh `CLAUDE.md`.** Every skill's description loads every turn whether you invoke it or not — so `--startup` also counts real `Skill` tool calls across your whole history and separates *installed* from *used*:
+
+```
+  Across your ENTIRE history (416 transcripts, not the --days window):
+    105 installed  |  12 with a recorded invocation  |  93 without
+
+  ~10,956 tokens per turn goes to skills with no recorded invocation.
+  Over a 100-turn session that is ~1.1M.
+```
+
+That is not an estimate of waste — it is waste with names attached, listed heaviest-first. A tool that only scans your config directory cannot know this.
 
 ## Prove your own savings
 

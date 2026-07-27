@@ -96,7 +96,17 @@ Tres cosas lo diferencian de un estimador de archivos de configuración:
 - El **residuo** se informa en lugar de ocultarse. Dos tercios de ese coste de arranque son el prompt de sistema y los esquemas de herramientas, que no cambian por mucho que edites tus archivos. Decírtelo te ahorra optimizar un número que no puedes mover.
 - Solo se cuenta el **frontmatter** de skills y agentes. Sus cuerpos se cargan bajo demanda, así que contar los archivos de skill enteros —como suelen hacer las herramientas que escanean directorios de configuración— sobrestima el arranque varias veces.
 
-La sorpresa habitual: **las skills instaladas pero sin usar pesan más que `CLAUDE.md`.** La descripción de cada skill se carga en cada turno, la invoques o no, así que `--startup` te nombra las más pesadas.
+La sorpresa habitual: **las skills instaladas pero sin usar pesan más que `CLAUDE.md`.** La descripción de cada skill se carga en cada turno, la invoques o no — por eso `--startup` también cuenta las llamadas reales a la herramienta `Skill` en todo tu historial y separa *instaladas* de *usadas*:
+
+```
+  En TODO tu historial (416 transcripciones, no la ventana --days):
+    105 instaladas  |  12 con invocación registrada  |  93 sin ella
+
+  ~10.956 tokens por turno se van en skills sin invocación registrada.
+  En una sesión de 100 turnos eso es ~1,1 M.
+```
+
+Eso no es una estimación del desperdicio: es desperdicio con nombre y apellido, ordenado de mayor a menor. Una herramienta que solo escanea tu directorio de configuración no puede saberlo.
 
 ## Demuestra tu propio ahorro
 

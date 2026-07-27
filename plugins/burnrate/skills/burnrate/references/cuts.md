@@ -16,8 +16,11 @@ Every installed skill's **description frontmatter** loads on every turn, whether
 
 A machine with ~100 skills installed carries roughly 10–15K tokens of descriptions on every single turn. That is usually the largest attributable slice of startup context — bigger than `CLAUDE.md`.
 
-- `--startup` lists the heaviest descriptions by name. Remove what you do not reach for.
+The part that makes this actionable: **most of them have never been invoked.** `--startup` counts real `Skill` tool calls across the whole transcript history and separates installed from used. A measured example — 105 installed, 12 with any recorded invocation, 93 without, and those 93 cost ~11K tokens per turn. That is not an estimate of waste; it is waste with names attached.
+
+- `--startup` lists the unused ones heaviest-first. Start there.
 - Long, keyword-stuffed `description:` fields cost the most. When writing your own skills, keep the description tight enough to trigger correctly and no longer.
+- Check the list before deleting: only explicit `Skill` tool calls are visible, so a skill reached another way will appear unused.
 - This cut costs nothing and breaks nothing.
 
 **Cost:** none. **Payback:** every turn of every session, forever.
