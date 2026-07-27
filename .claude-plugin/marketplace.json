@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Skills that measure instead of claiming.",
-    "version": "1.2.1"
+    "version": "1.2.2"
   },
   "plugins": [
     {
       "name": "burnrate",
       "source": "./plugins/burnrate",
       "description": "Find out what is actually burning your coding-agent tokens - measured from your own sessions, not a marketing percentage.",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "author": {
         "name": "XniperBuilds",
         "url": "https://github.com/xniperbuilds"

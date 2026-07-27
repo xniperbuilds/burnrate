@@ -28,7 +28,7 @@ import re
 import sys
 import time
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 # Relative billing weights vs base input tokens. Published Anthropic ratios:
 # cache write = 1.25x input, cache read = 0.10x input, output = 5x input.
@@ -369,19 +369,30 @@ def scan_startup(cwd=None):
     uncounted = 0
     if os.path.isdir(plug):
         installed_paths = []
+        stale = []
         manifest = os.path.join(plug, "installed_plugins.json")
         if os.path.isfile(manifest):
             try:
                 with open(manifest, "r", encoding="utf-8-sig", errors="replace") as fh:
-                    for entries in (json.load(fh).get("plugins") or {}).values():
+                    for pname, entries in (json.load(fh).get("plugins") or {}).items():
                         for e in entries or []:
                             p = e.get("installPath")
-                            if p and os.path.isdir(p):
+                            if not p:
+                                continue
+                            if os.path.isdir(p):
                                 installed_paths.append(p)
+                            else:
+                                # Path recorded on another machine or a renamed
+                                # user account. Not counted - it is almost
+                                # certainly not loading - but never silently
+                                # dropped, because a plugin you believe is
+                                # active and is not is worth knowing about.
+                                stale.append((pname, p))
             except (ValueError, IOError, OSError, AttributeError):
                 installed_paths = None          # unreadable -> fall back
         else:
             installed_paths = None
+        scan_startup.stale_plugins = stale
 
         every = glob.glob(os.path.join(plug, "**", "skills"), recursive=True)
         if installed_paths is None:
@@ -544,6 +555,14 @@ def print_startup(r, args):
                         print("        %5s tok  %s" % ("{:,}".format(t), nm))
                     print("      -> No Skill invocations found in your history, so usage could")
                     print("         not be measured. Uninstall what you know you do not use.")
+    for pname, ppath in getattr(scan_startup, "stale_plugins", []):
+        hits += 1
+        print("\n  [MEDIUM] Plugin '%s' is installed but its files are gone" % pname)
+        print("      Recorded at %s" % ppath)
+        print("      That path does not exist, so the plugin is almost certainly not")
+        print("      loading. Reinstall it if you want it, or remove it if you do not -")
+        print("      right now it is neither working nor cleaned up.")
+
     if measured and measured > 40000:
         hits += 1
         print("\n  [HIGH] Startup context is %s tokens before any work begins"
