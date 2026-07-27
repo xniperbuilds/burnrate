@@ -80,14 +80,14 @@ Le contexte de démarrage est payé à **chaque tour de chaque session** : c'est
   Il est renvoyé en cache_read à TOUS les tours suivants.
 
 -- ATTRIBUÉ (analyse de votre configuration, approx) ------------
-  descriptions de skills                12 998  105 skill(s)
+  descriptions de skills                8 185  57 skill(s)
   CLAUDE.md (utilisateur)                3 674
-  index mémoire (MEMORY.md)              2 718  max 200 lignes / 25 Ko
+  index mémoire (MEMORY.md)              2 758  max 200 lignes / 25 Ko
   descriptions de sous-agents            1 258  18 agent(s)
-  total attribué                        20 648
+  total attribué                        15 875
 
-  résidu non attribué                   39 409  prompt système + schémas d'outils
-  votre part                              34,4%  c'est ce que vous pouvez couper
+  résidu non attribué                   44 182  prompt système + schémas d'outils
+  votre part                              26,4%  c'est ce que vous pouvez couper
 ```
 
 Trois choses le distinguent d'un estimateur de fichiers de configuration :
@@ -100,10 +100,10 @@ La surprise habituelle : **les skills installées mais inutilisées pèsent plus
 
 ```
   Sur TOUT votre historique (416 transcriptions, pas la fenêtre --days) :
-    105 installées  |  12 avec une invocation enregistrée  |  93 sans
+    57 installées  |  12 avec une invocation enregistrée  |  45 sans
 
-  ~10 956 tokens par tour partent dans des skills sans invocation enregistrée.
-  Sur une session de 100 tours, cela fait ~1,1 M.
+  ~6 143 tokens par tour partent dans des skills sans invocation enregistrée.
+  Sur une session de 100 tours, cela fait ~614 K.
 ```
 
 Ce n'est pas une estimation du gaspillage : c'est du gaspillage nommé, classé du plus lourd au plus léger. Un outil qui se contente de scanner votre répertoire de configuration ne peut pas le savoir.

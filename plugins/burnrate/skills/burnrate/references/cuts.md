@@ -16,7 +16,9 @@ Every installed skill's **description frontmatter** loads on every turn, whether
 
 A machine with ~100 skills installed carries roughly 10–15K tokens of descriptions on every single turn. That is usually the largest attributable slice of startup context — bigger than `CLAUDE.md`.
 
-The part that makes this actionable: **most of them have never been invoked.** `--startup` counts real `Skill` tool calls across the whole transcript history and separates installed from used. A measured example — 105 installed, 12 with any recorded invocation, 93 without, and those 93 cost ~11K tokens per turn. That is not an estimate of waste; it is waste with names attached.
+The part that makes this actionable: **most of them have never been invoked.** `--startup` counts real `Skill` tool calls across the whole transcript history and separates installed from used. A measured example — 57 installed, 12 with any recorded invocation, 45 without, and those 45 cost ~6.1K tokens per turn. That is not an estimate of waste; it is waste with names attached.
+
+Note what is *not* counted: a marketplace you merely browsed leaves its entire catalogue on disk. Those skills never load. On the machine above that was 78 extra `SKILL.md` files — a plain directory scan would have reported nearly double the real cost.
 
 - `--startup` lists the unused ones heaviest-first. Start there.
 - Long, keyword-stuffed `description:` fields cost the most. When writing your own skills, keep the description tight enough to trigger correctly and no longer.

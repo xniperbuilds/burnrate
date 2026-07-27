@@ -1,6 +1,6 @@
 ﻿{
   "name": "burnrate",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Find out what is actually burning your coding-agent tokens - measured from your own sessions, not a marketing percentage.",
   "author": {
     "name": "XniperBuilds",

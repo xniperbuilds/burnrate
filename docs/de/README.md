@@ -80,14 +80,14 @@ Der Startkontext wird in **jedem Turn jeder Session** bezahlt — also ist er da
   Er wird in JEDEM späteren Turn als Cache Read erneut gesendet.
 
 -- ZUGEORDNET (aus deiner Konfiguration gescannt, ca.) ----------
-  Skill-Beschreibungen                  12.998  105 Skill(s)
+  Skill-Beschreibungen                  8.185  57 Skill(s)
   CLAUDE.md (Benutzer)                   3.674
-  Memory-Index (MEMORY.md)               2.718  max. 200 Zeilen / 25 KB
+  Memory-Index (MEMORY.md)               2.758  max. 200 Zeilen / 25 KB
   Agent-Beschreibungen                   1.258  18 Agent(en)
-  zugeordnet gesamt                     20.648
+  zugeordnet gesamt                     15.875
 
-  nicht zugeordneter Rest               39.409  System-Prompt + Tool-Schemas
-  dein Anteil                             34,4%  ist das, was du kürzen kannst
+  nicht zugeordneter Rest               44.182  System-Prompt + Tool-Schemas
+  dein Anteil                             26,4%  ist das, was du kürzen kannst
 ```
 
 Drei Dinge unterscheiden das von einem Konfigurationsdatei-Schätzer:
@@ -100,10 +100,10 @@ Die übliche Überraschung: **installierte, aber ungenutzte Skills wiegen mehr a
 
 ```
   Über deine GESAMTE Historie (416 Transkripte, nicht das --days-Fenster):
-    105 installiert  |  12 mit erfasstem Aufruf  |  93 ohne
+    57 installiert  |  12 mit erfasstem Aufruf  |  45 ohne
 
-  ~10.956 Tokens pro Turn gehen an Skills ohne erfassten Aufruf.
-  In einer Session mit 100 Turns sind das ~1,1 Mio.
+  ~6.143 Tokens pro Turn gehen an Skills ohne erfassten Aufruf.
+  In einer Session mit 100 Turns sind das ~614 Kio.
 ```
 
 Das ist keine Schätzung von Verschwendung — es ist Verschwendung mit Namen, nach Gewicht sortiert. Ein Werkzeug, das nur dein Konfigurationsverzeichnis scannt, kann das nicht wissen.

@@ -80,14 +80,14 @@ Başlangıç bağlamı **her oturumun her turunda** faturalanır; dolayısıyla 
   Sonraki HER turda cache_read olarak yeniden gönderilir.
 
 -- ATFEDİLEN (yapılandırmanızdan tarandı, yaklaşık) ------------
-  skill açıklamaları                    12.998  105 skill
+  skill açıklamaları                    8.185  57 skill
   CLAUDE.md (kullanıcı)                  3.674
-  bellek dizini (MEMORY.md)              2.718  sınır 200 satır / 25 KB
+  bellek dizini (MEMORY.md)              2.758  sınır 200 satır / 25 KB
   alt ajan açıklamaları                  1.258  18 ajan
-  atfedilen toplam                      20.648
+  atfedilen toplam                      15.875
 
-  atfedilemeyen kalan                   39.409  sistem istemi + araç şemaları
-  sizin payınız                           %34,4  kesebileceğiniz kısım
+  atfedilemeyen kalan                   44.182  sistem istemi + araç şemaları
+  sizin payınız                           %26,4  kesebileceğiniz kısım
 ```
 
 Bunu bir yapılandırma dosyası tahmincisinden ayıran üç şey var:
@@ -100,10 +100,10 @@ Alışıldık sürpriz: **kurulu ama kullanılmayan skill'ler `CLAUDE.md`'den a�
 
 ```
   TÜM geçmişinizde (416 kayıt, --days penceresi değil):
-    kurulu 105  |  çağrı kaydı olan 12  |  olmayan 93
+    kurulu 57  |  çağrı kaydı olan 12  |  olmayan 45
 
-  Tur başına ~10.956 token, çağrı kaydı olmayan skill'lere gidiyor.
-  100 turluk bir oturumda bu ~1,1 milyon eder.
+  Tur başına ~6.143 token, çağrı kaydı olmayan skill'lere gidiyor.
+  100 turluk bir oturumda bu ~614 millyon eder.
 ```
 
 Bu bir israf tahmini değil — adı sanı belli bir israf, en ağırdan başlayarak sıralanmış. Yalnızca yapılandırma dizininizi tarayan bir araç bunu bilemez.

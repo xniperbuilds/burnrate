@@ -80,14 +80,14 @@ O contexto de inicialização é pago em **cada turno de cada sessão**, então 
   É reenviado como cache_read em TODOS os turnos seguintes.
 
 -- ATRIBUÍDO (varredura da sua config, aprox) -------------------
-  descrições de skills                  12.998  105 skill(s)
+  descrições de skills                  8.185  57 skill(s)
   CLAUDE.md (usuário)                    3.674
-  índice de memória (MEMORY.md)          2.718  limite 200 linhas / 25KB
+  índice de memória (MEMORY.md)          2.758  limite 200 linhas / 25KB
   descrições de subagentes               1.258  18 agente(s)
-  total atribuído                       20.648
+  total atribuído                       15.875
 
-  resíduo não atribuído                 39.409  prompt de sistema + schemas
-  a sua parte                             34,4%  é o que dá para cortar
+  resíduo não atribuído                 44.182  prompt de sistema + schemas
+  a sua parte                             26,4%  é o que dá para cortar
 ```
 
 Três coisas o diferenciam de um estimador de arquivos de configuração:
@@ -100,10 +100,10 @@ A surpresa de sempre: **skills instaladas e não usadas pesam mais que o `CLAUDE
 
 ```
   Em TODO o seu histórico (416 transcrições, não a janela --days):
-    105 instaladas  |  12 com invocação registrada  |  93 sem
+    57 instaladas  |  12 com invocação registrada  |  45 sem
 
-  ~10.956 tokens por turno vão para skills sem invocação registrada.
-  Numa sessão de 100 turnos isso dá ~1,1 mi.
+  ~6.143 tokens por turno vão para skills sem invocação registrada.
+  Numa sessão de 100 turnos isso dá ~614 mil.
 ```
 
 Isso não é uma estimativa de desperdício — é desperdício com nome, listado do mais pesado para o mais leve. Uma ferramenta que só varre o diretório de configuração não tem como saber disso.

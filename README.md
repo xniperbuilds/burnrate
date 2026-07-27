@@ -79,14 +79,14 @@ Startup context is paid on **every turn of every session**, so it is the highest
   This is re-sent as cache_read on EVERY later turn of the session.
 
 -- ATTRIBUTED (scanned from your config, approx) ---------------
-  skill descriptions                    12,998  105 skill(s)
+  skill descriptions                    8,185  57 skill(s)
   CLAUDE.md (user)                       3,674
-  memory index (MEMORY.md)               2,718  capped at 200 lines / 25KB
+  memory index (MEMORY.md)               2,758  capped at 200 lines / 25KB
   agent descriptions                     1,258  18 agent(s)
-  attributed total                      20,648
+  attributed total                      15,875
 
-  unattributed residual                 39,409  system prompt + tool schemas
-  your share                             34.4%  of startup is yours to cut
+  unattributed residual                 44,182  system prompt + tool schemas
+  your share                             26.4%  of startup is yours to cut
 ```
 
 Three things make this different from a config-file estimator:
@@ -99,10 +99,10 @@ The usual surprise: **installed-but-unused skills outweigh `CLAUDE.md`.** Every 
 
 ```
   Across your ENTIRE history (416 transcripts, not the --days window):
-    105 installed  |  12 with a recorded invocation  |  93 without
+    57 installed  |  12 with a recorded invocation  |  45 without
 
-  ~10,956 tokens per turn goes to skills with no recorded invocation.
-  Over a 100-turn session that is ~1.1M.
+  ~6,143 tokens per turn goes to skills with no recorded invocation.
+  Over a 100-turn session that is ~614K.
 ```
 
 That is not an estimate of waste — it is waste with names attached, listed heaviest-first. A tool that only scans your config directory cannot know this.

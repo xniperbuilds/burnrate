@@ -80,14 +80,14 @@ Ngữ cảnh khởi động được tính phí ở **mỗi lượt của mỗi 
   Nó được gửi lại dưới dạng cache_read ở TẤT CẢ các lượt sau.
 
 -- QUY GÁN (quét cấu hình của bạn, ước tính) --------------------
-  mô tả skill                           12.998  105 skill
+  mô tả skill                           8.185  57 skill
   CLAUDE.md (người dùng)                 3.674
-  chỉ mục bộ nhớ (MEMORY.md)             2.718  giới hạn 200 dòng / 25KB
+  chỉ mục bộ nhớ (MEMORY.md)             2.758  giới hạn 200 dòng / 25KB
   mô tả tác nhân phụ                     1.258  18 tác nhân
-  tổng quy gán được                     20.648
+  tổng quy gán được                     15.875
 
-  phần dư không quy gán được            39.409  system prompt + schema công cụ
-  phần của bạn                            34,4%  là phần bạn có thể cắt
+  phần dư không quy gán được            44.182  system prompt + schema công cụ
+  phần của bạn                            26,4%  là phần bạn có thể cắt
 ```
 
 Ba điều khiến nó khác với một công cụ ước lượng tệp cấu hình:
@@ -100,10 +100,10 @@ Bất ngờ thường gặp: **những skill đã cài nhưng không dùng còn 
 
 ```
   Trên TOÀN BỘ lịch sử của bạn (416 bản ghi, không phải cửa sổ --days):
-    đã cài 105  |  có ghi nhận lệnh gọi 12  |  không có 93
+    đã cài 57  |  có ghi nhận lệnh gọi 12  |  không có 45
 
-  Khoảng 10.956 token mỗi lượt đổ vào những skill không có lệnh gọi nào.
-  Một phiên 100 lượt là khoảng 1,1 triệu.
+  Khoảng 6.143 token mỗi lượt đổ vào những skill không có lệnh gọi nào.
+  Một phiên 100 lượt là khoảng 614 nghìn.
 ```
 
 Đây không phải ước tính lãng phí — đây là lãng phí có tên, xếp từ nặng nhất. Một công cụ chỉ quét thư mục cấu hình thì không thể biết điều này.

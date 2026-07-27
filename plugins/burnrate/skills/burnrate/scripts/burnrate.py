@@ -28,7 +28,7 @@ import re
 import sys
 import time
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 # Relative billing weights vs base input tokens. Published Anthropic ratios:
 # cache write = 1.25x input, cache read = 0.10x input, output = 5x input.
@@ -360,10 +360,42 @@ def scan_startup(cwd=None):
                 "capped at 200 lines / 25KB")
 
     # --- skills: ONLY the frontmatter loads at startup -------------------
+    # A marketplace you have merely *browsed* leaves its whole catalogue on
+    # disk. Those skills are not installed and never enter context, so
+    # counting every SKILL.md under plugins/ overstates the bill badly.
+    # Only paths named in installed_plugins.json are counted.
     skill_dirs = [os.path.join(home, "skills")]
     plug = os.path.join(home, "plugins")
+    uncounted = 0
     if os.path.isdir(plug):
-        skill_dirs.extend(glob.glob(os.path.join(plug, "**", "skills"), recursive=True))
+        installed_paths = []
+        manifest = os.path.join(plug, "installed_plugins.json")
+        if os.path.isfile(manifest):
+            try:
+                with open(manifest, "r", encoding="utf-8-sig", errors="replace") as fh:
+                    for entries in (json.load(fh).get("plugins") or {}).values():
+                        for e in entries or []:
+                            p = e.get("installPath")
+                            if p and os.path.isdir(p):
+                                installed_paths.append(p)
+            except (ValueError, IOError, OSError, AttributeError):
+                installed_paths = None          # unreadable -> fall back
+        else:
+            installed_paths = None
+
+        every = glob.glob(os.path.join(plug, "**", "skills"), recursive=True)
+        if installed_paths is None:
+            skill_dirs.extend(every)            # cannot tell; count them all
+            scan_startup.plugin_filtered = False
+        else:
+            keep = [d for d in every
+                    if any(os.path.normcase(os.path.abspath(d)).startswith(
+                        os.path.normcase(os.path.abspath(p))) for p in installed_paths)]
+            skill_dirs.extend(keep)
+            uncounted = sum(len(glob.glob(os.path.join(d, "*", "SKILL.md")))
+                            for d in every if d not in keep)
+            scan_startup.plugin_filtered = True
+    scan_startup.uncounted_plugin_skills = uncounted
     fm_tokens = body_tokens = count = 0
     heaviest = []
     seen = set()
@@ -455,6 +487,16 @@ def print_startup(r, args):
         print("\n-- NOT loaded at startup (on demand only) ----------------------")
         for _cat, label, n, note in sorted(deferred, key=lambda x: -x[2]):
             print("  %-34s %9s  %s" % (label[:34], "{:,}".format(n), note))
+
+    uncounted = getattr(scan_startup, "uncounted_plugin_skills", 0)
+    if uncounted:
+        print("\n  Ignored %d skill(s) from marketplaces you have browsed but not"
+              % uncounted)
+        print("  installed - they sit on disk and never enter context. Counting")
+        print("  them, as a plain directory scan would, overstates startup badly.")
+    elif getattr(scan_startup, "plugin_filtered", True) is False:
+        print("\n  Note: installed_plugins.json could not be read, so every skill")
+        print("  found under plugins/ was counted. Some may not actually load.")
 
     if servers:
         print("\n  MCP servers configured: %s" % ", ".join(servers))

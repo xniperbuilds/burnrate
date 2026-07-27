@@ -50,7 +50,8 @@ It also separates **installed** skills from **used** ones by counting real `Skil
 Two rules when reporting it:
 
 - Usage is counted across the **entire** transcript history, never the `--days` window. Telling someone to delete a skill they used two months ago is a worse error than staying quiet.
-- Only explicit `Skill` tool calls are visible, so a skill reached another way looks unused. Report it as *no recorded invocation*, not *never used*, and tell the user to check the list before deleting.
+- Only explicit `Skill` tool calls are visible, so a skill reached another way looks unused. Report it as *no recorded invocation*, not *never used*, and tell the user to check the list before deleting. In particular, a skill named by a subagent or referenced from another skill's body is reachable without ever appearing as a `Skill` call.
+- Only plugins listed in `installed_plugins.json` are counted. A marketplace the user merely browsed leaves its whole catalogue on disk; those skills never load, and counting them roughly doubles the reported figure.
 
 It reports four things:
 
