@@ -1,11 +1,11 @@
-﻿{
-  "name": "xniperbuilds",
+{
+  "name": "xniperbuilds-burnrate",
   "owner": {
     "name": "XniperBuilds",
     "url": "https://github.com/xniperbuilds"
   },
   "metadata": {
-    "description": "Skills that measure instead of claiming.",
+    "description": "Skills that measure instead of claiming. All of them: https://github.com/xniperbuilds/skills",
     "version": "1.2.2"
   },
   "plugins": [

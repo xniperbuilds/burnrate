@@ -131,8 +131,16 @@ python burnrate.py --compare before
 ## Install as a skill
 
 ```
+/plugin marketplace add xniperbuilds/skills
+/plugin install burnrate
+```
+
+That marketplace carries [all four XniperBuilds skills](https://github.com/xniperbuilds/skills).
+For this one on its own:
+
+```
 /plugin marketplace add xniperbuilds/burnrate
-/plugin install burnrate@xniperbuilds
+/plugin install burnrate
 ```
 
 Installed, it does three things: measures before recommending, applies context discipline that targets the expensive 83–99% instead of the cheap 0.6%, and re-measures so the improvement is a fact. The full cut playbook — ranked by impact, with the cost of each cut stated — is in [`references/cuts.md`](plugins/burnrate/skills/burnrate/references/cuts.md).
